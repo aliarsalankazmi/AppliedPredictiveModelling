@@ -1,0 +1,153 @@
+#================================ CHAPTER 3 | Question 1 =============================================================
+
+####Load required libraries
+require(e1071)
+require(MASS)
+require(mlbench)
+require(reshape2)
+require(ggplot2)
+require(RColorBrewer)
+
+
+###########################Load required data
+
+data(Glass)
+d1<- Glass
+class.labels<- c("Building windows float","Building windows non-float","Vehicle windows float","Containers","Tableware","Headlamps")
+d2<- Glass
+levels(d2$Type)<- class.labels
+
+
+###########################Initial inspection of data
+
+names(d1)
+dim(d1)
+class.index<- sapply(d1,class)
+
+####Check for any missing values, and obtain a summary
+summary(d1)   ## no missing values
+
+
+
+################################Check overall distributions of target classes using a wrapper to Pie charts
+
+createPie<- function(targetClass){
+class.num<- paste("Class",levels(targetClass),sep="-")
+class.num<- paste0("(",class.num,")")
+labels<- paste(class.labels,class.num)
+percentages<- paste0(round(100*table(d1$Type)/length(d1$Type),digits=0),"%")
+label.output<- paste(labels,percentages,sep=" : ")
+colours<- brewer.pal(length(labels),name="Paired")
+pie(table(d1$Type),labels=label.output,col=colours,main="Target Class distribution")
+}
+createPie(d1$Type)
+
+
+
+
+##################################Create a normal distribution to compare our data against
+
+new.df<- subset(d1,select=(class.index=="numeric" | class.index=="integer"))
+set.seed(1)
+new.df$Normal.Distribution<- rnorm(nrow(new.df))
+hist.plot<- ggplot(data=new.df,aes(x=Normal.Distribution)) + geom_histogram(aes(fill=colnames(new.df)[10],alpha=.5)) +
+	 geom_histogram(data=new.df,aes(x=new.df[,1],fill=colnames(new.df)[1],alpha=.5)) +
+	 geom_histogram(data=new.df,aes(x=new.df[,2],fill=colnames(new.df)[2],alpha=.5)) +
+	 geom_histogram(data=new.df,aes(x=new.df[,3],fill=colnames(new.df)[3],alpha=.5)) +
+	 geom_histogram(data=new.df,aes(x=new.df[,4],fill=colnames(new.df)[4],alpha=.5)) +
+	 geom_histogram(data=new.df,aes(x=new.df[,5],fill=colnames(new.df)[5],alpha=.5)) +
+	 geom_histogram(data=new.df,aes(x=new.df[,6],fill=colnames(new.df)[6],alpha=.5)) +
+	 geom_histogram(data=new.df,aes(x=new.df[,7],fill=colnames(new.df)[7],alpha=.5)) +
+	 geom_histogram(data=new.df,aes(x=new.df[,8],fill=colnames(new.df)[8],alpha=.5)) +
+	 geom_histogram(data=new.df,aes(x=new.df[,9],fill=colnames(new.df)[9],alpha=.5)) +
+	 scale_alpha(guide="none") + scale_fill_hue(name="Classes")
+
+
+
+##################################Check skewness of variables
+
+checkSkew<- function(dataframe){
+classes<- sapply(dataframe,class)
+num.class<- classes == "numeric" | classes == "integer"
+skew.result<- sapply(dataframe[,num.class],skewness)
+#skew.vars<- skew.result[skew.result > .9 | skew.result < -.9] 
+return(round(skew.result,digits=2))
+}
+skew.test<- checkSkew(d1)
+
+
+##################################Check kurtosis of variables
+
+checkKurtosis<- function(dataframe){
+classes<- sapply(dataframe,class)
+num.class<- classes == "numeric" | classes == "integer"
+kurtosis.result<- sapply(dataframe[,num.class],kurtosis)
+#kurt.vars<- kurtosis.result[kurtosis.result > .9 | kurtosis.result < -.9]
+return(round(kurtosis.result,digits=2))
+}
+kurtosis.test<- checkKurtosis(d1)
+
+
+
+d3<- d2
+col.class<- sapply(d3,class)
+col.index<- col.class == "numeric" | col.class == "integer"
+colnames(d3)[col.index]<- paste0(colnames(d3)[col.index]," (Skew:",skew.test," Kurtosis:",kurtosis.test,")")
+hist.plots<- ggplot(data=melt(d3),aes(x=value,fill=Type)) + geom_histogram() + facet_wrap(~variable,scales="free")
+#The hist.plots used to see which classes have a large number of instances in each variable
+
+
+line.plots<- ggplot(data=melt(d2),aes(x=value,y=Type)) + geom_boxplot() + facet_wrap(~variable,scales="free")
+#whereas the line.plots used to see the ranges of values for each class in each variable
+
+
+
+
+#####################################Use boxplots
+
+par(mfrow=c(2,5))
+for(i in 1:9){
+boxplot(d1[,i],main=names(d1)[i])
+}
+
+
+
+
+#####################################Check between-predictor correlations for pairs of variables
+
+createCorr<- function(dataframe,target){
+class.index<- sapply(dataframe,class)
+new.df<- subset(dataframe,select=(class.index == "numeric" | class.index == "integer"))
+colour.index<- target
+colours<- brewer.pal(length(levels(target)),name="Paired")
+levels(colour.index)<- colours
+pairs(new.df,col=colour.index,pch=19)
+}
+createCorr(d1,d1$Type)
+
+
+
+######################################Plot a parallel coordinates plot
+
+parallelplot(~d3[,-ncol(d3)] | Type, d3)
+ggpcp(d3,vars=names(d3[,-ncol(d3)])) + geom_line(aes(colour=Type))
+
+
+
+
+#######################################Transforming variables
+
+d4<- d1
+transformations<- sapply(d4[,-ncol(d4)],BoxCoxTrans)
+transformDf<- function(dataframe,transformation){
+if(ncol(dataframe) == length(transformation)){
+	index<- !is.na(unlist(transformation))
+	new.df<- dataframe
+	new.df[,index]<- mapply(FUN=function(values,trans){((values^trans)-1)/trans},
+	values=new.df[,index],trans=transformation[index])
+}
+return(new.df)
+}
+trans.df<- transformDf(d4[,-ncol(d4)],unlist(transformations[1,]))
+trans.df$Type<- d1$Type
+levels(trans.df$Type)<- class.labels
