@@ -111,6 +111,12 @@ boxplot(d1[,i],main=names(d1)[i])
 }
 
 
+par(mfrow=c(2,5))
+for(i in 1:9){
+boxplot(d1[,i]~d1$Type,main=names(d1)[i])
+}
+
+
 
 
 #####################################Check between-predictor correlations for pairs of variables
