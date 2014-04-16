@@ -107,12 +107,6 @@ line.plots<- ggplot(data=melt(d2),aes(x=value,y=Type)) + geom_boxplot() + facet_
 
 par(mfrow=c(2,5))
 for(i in 1:9){
-boxplot(d1[,i],main=names(d1)[i])
-}
-
-
-par(mfrow=c(2,5))
-for(i in 1:9){
 boxplot(d1[,i]~d1$Type,main=names(d1)[i])
 }
 
