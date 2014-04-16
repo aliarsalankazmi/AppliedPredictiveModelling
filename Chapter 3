@@ -60,7 +60,7 @@ hist.plot<- ggplot(data=new.df,aes(x=Normal.Distribution)) + geom_histogram(aes(
 	 geom_histogram(data=new.df,aes(x=new.df[,7],fill=colnames(new.df)[7],alpha=.5)) +
 	 geom_histogram(data=new.df,aes(x=new.df[,8],fill=colnames(new.df)[8],alpha=.5)) +
 	 geom_histogram(data=new.df,aes(x=new.df[,9],fill=colnames(new.df)[9],alpha=.5)) +
-	 scale_alpha(guide="none") + scale_fill_hue(name="Classes")
+	 scale_alpha(guide="none") + scale_fill_hue(name="Classes") + xlab("Variable Distributions")
 
 
 
