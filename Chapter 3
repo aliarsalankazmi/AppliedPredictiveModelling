@@ -132,7 +132,7 @@ createCorr(d1,d1$Type)
 parallelplot(~d3[,-ncol(d3)] | Type, d3)
 
 #a ggplot2 version of the above plot:
-#ggpcp(d3,vars=names(d3[,-ncol(d3)])) + geom_line(aes(colour=Type))
+#ggpcp(d3,vars=names(d3[,-ncol(d3)])) + geom_line(aes(colour=Type)) + facet_wrap(~Type,scales="free")
 
 
 
